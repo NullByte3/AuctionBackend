@@ -9,6 +9,7 @@ import org.hibernate.SessionFactory;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Objects;
 
 // TODO: Use slf4j for logging instead of System.out/err
 public class ItemManager extends AuctionBase {
@@ -61,9 +62,9 @@ public class ItemManager extends AuctionBase {
             Item item = new Item();
             item.setItemName(ctx.formParam("item_name"));
             item.setItemImage(ctx.formParam("item_image"));
-            item.setItemPrice(new BigDecimal(ctx.formParam("item_price")));
+            item.setItemPrice(new BigDecimal(Objects.requireNonNull(ctx.formParam("item_price"))));
             item.setItemDescription(ctx.formParam("item_description"));
-            item.setBidIncrement(new BigDecimal(ctx.formParam("bid_increment")));
+            item.setBidIncrement(new BigDecimal(Objects.requireNonNull(ctx.formParam("bid_increment"))));
             item.setSeller(seller);
 
             session.save(item);
