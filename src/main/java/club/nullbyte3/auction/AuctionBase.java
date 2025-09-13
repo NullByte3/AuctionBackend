@@ -19,7 +19,7 @@ public class AuctionBase {
 
     }
 
-    public <T> T find(Class<T> clazz) {
+    public <T extends AuctionBase> T find(Class<T> clazz) {
         return instance.getModule(clazz);
     }
 
