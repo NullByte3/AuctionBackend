@@ -9,6 +9,7 @@ import org.mindrot.jbcrypt.BCrypt;
 
 import java.util.UUID;
 
+// TODO: Use slf4j for logging instead of System.out/err
 public class AuthManager extends AuctionBase {
 
     private SessionFactory sessionFactory;

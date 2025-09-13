@@ -11,6 +11,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Properties;
 
+// TODO: Use slf4j for logging instead of System.out/err
 public class DatabaseManager extends AuctionBase {
 
     @Getter

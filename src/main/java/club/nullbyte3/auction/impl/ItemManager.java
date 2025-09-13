@@ -10,6 +10,7 @@ import org.hibernate.SessionFactory;
 import java.math.BigDecimal;
 import java.util.List;
 
+// TODO: Use slf4j for logging instead of System.out/err
 public class ItemManager extends AuctionBase {
 
     private SessionFactory sessionFactory;
