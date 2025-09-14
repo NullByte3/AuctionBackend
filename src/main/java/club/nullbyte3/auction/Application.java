@@ -11,15 +11,15 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Slf4j
-public class Main {
+public class Application {
 
     private final Map<Class<?>, AuctionBase> modules = new HashMap<>();
 
     public static void main(String[] args) {
-        new Main().start();
+        new Application().start();
     }
 
-    public void start() {
+    public boolean start() {
         // Setup our modules.
         getModule(DatabaseManager.class);
         AuthManager authManager = getModule(AuthManager.class);
@@ -40,6 +40,7 @@ public class Main {
         app.post("/item", itemManager::createItem);
         // Send a signal to all modules to shut down when we exit.
         Runtime.getRuntime().addShutdownHook(new Thread(() -> modules.values().forEach(AuctionBase::disable)));
+        return true;
     }
 
     /**

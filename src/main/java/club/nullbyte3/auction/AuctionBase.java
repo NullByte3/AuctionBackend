@@ -9,7 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class AuctionBase {
 
-    private Main instance;
+    private Application instance;
 
     public void enable() {
 
