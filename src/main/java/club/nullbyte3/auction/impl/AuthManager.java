@@ -2,14 +2,17 @@ package club.nullbyte3.auction.impl;
 
 import club.nullbyte3.auction.AuctionBase;
 import club.nullbyte3.auction.db.User;
+import club.nullbyte3.auction.AuctionBase;
+import club.nullbyte3.auction.db.User;
 import io.javalin.http.Context;
+import lombok.extern.slf4j.Slf4j;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.mindrot.jbcrypt.BCrypt;
 
 import java.util.UUID;
 
-// TODO: Use slf4j for logging instead of System.out/err
+@Slf4j
 public class AuthManager extends AuctionBase {
 
     private SessionFactory sessionFactory;

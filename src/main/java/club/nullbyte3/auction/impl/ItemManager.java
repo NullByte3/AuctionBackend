@@ -3,7 +3,11 @@ package club.nullbyte3.auction.impl;
 import club.nullbyte3.auction.AuctionBase;
 import club.nullbyte3.auction.db.Item;
 import club.nullbyte3.auction.db.User;
+import club.nullbyte3.auction.AuctionBase;
+import club.nullbyte3.auction.db.Item;
+import club.nullbyte3.auction.db.User;
 import io.javalin.http.Context;
+import lombok.extern.slf4j.Slf4j;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 
@@ -11,7 +15,8 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Objects;
 
-// TODO: Use slf4j for logging instead of System.out/err
+// TODO: Hide the seller auth token and password hash when returning item data.
+@Slf4j
 public class ItemManager extends AuctionBase {
 
     private SessionFactory sessionFactory;
@@ -72,6 +77,7 @@ public class ItemManager extends AuctionBase {
 
             ctx.status(201).json(item.getId());
         } catch (Exception e) {
+            log.error("Failed to create item", e);
             ctx.status(400).result("Invalid item data: " + e.getMessage());
         }
     }

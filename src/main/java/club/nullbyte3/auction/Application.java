@@ -5,6 +5,7 @@ import club.nullbyte3.auction.impl.DatabaseManager;
 import club.nullbyte3.auction.impl.ItemManager;
 import io.javalin.Javalin;
 import io.javalin.json.JavalinJackson;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.HashMap;
@@ -14,22 +15,26 @@ import java.util.Map;
 public class Application {
 
     private final Map<Class<?>, AuctionBase> modules = new HashMap<>();
+    @Getter
+    private Javalin app;
 
     public static void main(String[] args) {
-        new Application().start();
+        new Application().start(7070);
     }
 
-    public boolean start() {
+    public boolean start(int port) {
         // Setup our modules.
         getModule(DatabaseManager.class);
         AuthManager authManager = getModule(AuthManager.class);
         ItemManager itemManager = getModule(ItemManager.class);
 
         // Send a signal to all modules to start up.
-        modules.values().forEach(AuctionBase::enable);
+        // We need to enable the database manager first, as other modules depend on it.
+        getModule(DatabaseManager.class).enable();
+        modules.values().stream().filter(m -> !(m instanceof DatabaseManager)).forEach(AuctionBase::enable);
 
         // Start up Javalin (creates a separate thread, so we don't have to do a while true loop).
-        Javalin app = Javalin.create(config -> config.jsonMapper(new JavalinJackson())).start(7070);
+        app = Javalin.create(config -> config.jsonMapper(new JavalinJackson())).start(port);
 
         // Auth endpoints
         app.post("/auth/register", authManager::register);
@@ -39,8 +44,15 @@ public class Application {
         app.get("/item/{id}", itemManager::getItemById);
         app.post("/item", itemManager::createItem);
         // Send a signal to all modules to shut down when we exit.
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> modules.values().forEach(AuctionBase::disable)));
+        Runtime.getRuntime().addShutdownHook(new Thread(this::shutdown));
         return true;
+    }
+
+    public void shutdown() {
+        if (app != null) {
+            app.stop();
+        }
+        modules.values().forEach(AuctionBase::disable);
     }
 
     /**
