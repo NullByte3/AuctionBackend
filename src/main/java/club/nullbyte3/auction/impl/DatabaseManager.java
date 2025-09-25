@@ -11,7 +11,9 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Properties;
 
-// TODO: Use slf4j for logging instead of System.out/err
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 public class DatabaseManager extends AuctionBase {
 
     @Getter
@@ -24,7 +26,7 @@ public class DatabaseManager extends AuctionBase {
             ensureDatabaseExists(configuration);
             sessionFactory = configuration.buildSessionFactory();
         } catch (Throwable ex) {
-            System.err.println("Failed to create sessionFactory object." + ex);
+            log.error("Failed to create sessionFactory object.", ex);
             throw new ExceptionInInitializerError(ex);
         }
     }
@@ -36,24 +38,24 @@ public class DatabaseManager extends AuctionBase {
         String pass = props.getProperty("hibernate.connection.password");
 
         int lastSlash = url.lastIndexOf('/');
-        if (lastSlash == -1 || lastSlash + 1 == url.length()) {
-            System.err.println("Could not determine database name from URL: " + url);
+        if (lastSlash == -1 || lastSlash + 1 == url.length() || url.substring(lastSlash + 1).contains("?")) { // Also check for params
+            log.error("Could not determine database name from URL: {}", url);
             return;
         }
 
-        String dbName = url.substring(lastSlash + 1);
+        String dbName = url.substring(lastSlash + 1).split("\\?")[0];
         String baseUrl = url.substring(0, lastSlash + 1) + "postgres"; // default database, but we switch.
 
         try (Connection conn = DriverManager.getConnection(baseUrl, user, pass);
              Statement stmt = conn.createStatement()) {
             boolean dbExists = stmt.executeQuery("SELECT 1 FROM pg_database WHERE datname = '" + dbName + "'").next();
             if (!dbExists) {
-                System.out.println("Database '" + dbName + "' does not exist. Creating it...");
+                log.info("Database '{}' does not exist. Creating it...", dbName);
                 stmt.executeUpdate("CREATE DATABASE " + dbName);
-                System.out.println("Database '" + dbName + "' created successfully.");
+                log.info("Database '{}' created successfully.", dbName);
             }
         } catch (SQLException e) {
-            System.err.println("Error while trying to create database: " + e.getMessage());
+            log.error("Error while trying to create database", e);
         }
     }
 

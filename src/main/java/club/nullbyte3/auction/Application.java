@@ -1,6 +1,7 @@
 package club.nullbyte3.auction;
 
 import club.nullbyte3.auction.impl.AuthManager;
+import club.nullbyte3.auction.impl.BidManager;
 import club.nullbyte3.auction.impl.DatabaseManager;
 import club.nullbyte3.auction.impl.ItemManager;
 import io.javalin.Javalin;
@@ -27,6 +28,7 @@ public class Application {
         getModule(DatabaseManager.class);
         AuthManager authManager = getModule(AuthManager.class);
         ItemManager itemManager = getModule(ItemManager.class);
+        BidManager bidManager = getModule(BidManager.class);
 
         // Send a signal to all modules to start up.
         // We need to enable the database manager first, as other modules depend on it.
@@ -43,6 +45,8 @@ public class Application {
         app.get("/item", itemManager::getAllItems);
         app.get("/item/{id}", itemManager::getItemById);
         app.post("/item", itemManager::createItem);
+        // WebSocket endpoints
+        app.ws("/ws/bid", bidManager);
         // Send a signal to all modules to shut down when we exit.
         Runtime.getRuntime().addShutdownHook(new Thread(this::shutdown));
         return true;

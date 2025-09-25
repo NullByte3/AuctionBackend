@@ -5,6 +5,7 @@ import club.nullbyte3.auction.db.Item;
 import club.nullbyte3.auction.db.User;
 import club.nullbyte3.auction.AuctionBase;
 import club.nullbyte3.auction.db.Item;
+import club.nullbyte3.auction.db.Bid;
 import club.nullbyte3.auction.db.User;
 import io.javalin.http.Context;
 import lombok.extern.slf4j.Slf4j;
@@ -67,7 +68,8 @@ public class ItemManager extends AuctionBase {
             Item item = new Item();
             item.setItemName(ctx.formParam("item_name"));
             item.setItemImage(ctx.formParam("item_image"));
-            item.setItemPrice(new BigDecimal(Objects.requireNonNull(ctx.formParam("item_price"))));
+            BigDecimal price = new BigDecimal(Objects.requireNonNull(ctx.formParam("item_price")));
+            item.setItemPrice(price);
             item.setItemDescription(ctx.formParam("item_description"));
             item.setBidIncrement(new BigDecimal(Objects.requireNonNull(ctx.formParam("bid_increment"))));
             item.setSeller(seller);
@@ -79,6 +81,33 @@ public class ItemManager extends AuctionBase {
         } catch (Exception e) {
             log.error("Failed to create item", e);
             ctx.status(400).result("Invalid item data: " + e.getMessage());
+        }
+    }
+
+    public void placeBid(User user, Item item, BigDecimal newPrice) {
+        try (Session session = sessionFactory.openSession()) {
+            session.beginTransaction();
+            // refresh item to get the latest from db.
+            session.refresh(item);
+            BigDecimal currentBid = session.createQuery(
+                            "SELECT MAX(b.price) FROM Bid b WHERE b.item = :item", BigDecimal.class)
+                    .setParameter("item", item)
+                    .uniqueResultOptional()
+                    .orElse(item.getItemPrice());
+
+            BigDecimal minimumBid = currentBid.add(item.getBidIncrement());
+            if (newPrice.compareTo(minimumBid) < 0) {
+                throw new IllegalArgumentException("Bid must be at least " + minimumBid);
+            }
+            Bid bid = new Bid();
+            bid.setItem(item);
+            bid.setUser(user);
+            bid.setPrice(newPrice);
+            session.save(bid);
+            session.getTransaction().commit();
+        } catch (Exception e) {
+            log.error("Failed to place bid", e);
+            throw e;
         }
     }
 }
