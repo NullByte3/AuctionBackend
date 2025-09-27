@@ -1,11 +1,9 @@
 package club.nullbyte3.auction;
 
-import club.nullbyte3.auction.impl.AuthManager;
-import club.nullbyte3.auction.impl.BidManager;
-import club.nullbyte3.auction.impl.DatabaseManager;
-import club.nullbyte3.auction.impl.ItemManager;
+import club.nullbyte3.auction.impl.*;
 import io.javalin.Javalin;
 import io.javalin.json.JavalinJackson;
+import io.javalin.plugin.bundled.CorsPluginConfig;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
@@ -29,6 +27,7 @@ public class Application {
         AuthManager authManager = getModule(AuthManager.class);
         ItemManager itemManager = getModule(ItemManager.class);
         BidManager bidManager = getModule(BidManager.class);
+        AuctionManager.start(bidManager);
 
         // Send a signal to all modules to start up.
         // We need to enable the database manager first, as other modules depend on it.
@@ -36,11 +35,17 @@ public class Application {
         modules.values().stream().filter(m -> !(m instanceof DatabaseManager)).forEach(AuctionBase::enable);
 
         // Start up Javalin (creates a separate thread, so we don't have to do a while true loop).
-        app = Javalin.create(config -> config.jsonMapper(new JavalinJackson())).start(port);
+        app = Javalin.create(config -> {
+            config.jsonMapper(new JavalinJackson());
+            config.bundledPlugins.enableCors(cors -> {
+                cors.addRule(CorsPluginConfig.CorsRule::anyHost);
+            });
+        }).start(port);
 
         // Auth endpoints
         app.post("/auth/register", authManager::register);
         app.post("/auth/login", authManager::login);
+        app.post("/auth/validate", authManager::validate);
         // Item endpoints
         app.get("/item", itemManager::getAllItems);
         app.get("/item/{id}", itemManager::getItemById);

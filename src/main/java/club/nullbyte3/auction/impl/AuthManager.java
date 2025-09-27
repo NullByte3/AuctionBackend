@@ -80,4 +80,25 @@ public class AuthManager extends AuctionBase {
             ctx.json(user.getAuthToken());
         }
     }
+
+    public void validate(Context ctx) {
+        String token = ctx.formParam("token");
+
+        if (token == null) {
+            ctx.status(400).result("Token is required.");
+            return;
+        }
+
+        try (Session session = sessionFactory.openSession()) {
+            User user = session.createQuery("FROM User WHERE authToken = :token", User.class)
+                    .setParameter("token", token)
+                    .uniqueResult();
+
+            if (user == null) {
+                ctx.status(401).result("Invalid token.");
+                return;
+            }
+            ctx.json(user.getUsername());
+        }
+    }
 }

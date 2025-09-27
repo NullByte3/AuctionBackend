@@ -77,6 +77,7 @@ public class ItemManager extends AuctionBase {
             session.save(item);
             session.getTransaction().commit();
 
+            AuctionManager.addItem(item);
             ctx.status(201).json(item.getId());
         } catch (Exception e) {
             log.error("Failed to create item", e);
