@@ -11,4 +11,6 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 public class BidResponse {
     private BigDecimal price;
+    private String bidder;
+    private Long bidderId;
 }

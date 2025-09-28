@@ -7,6 +7,5 @@ import java.math.BigDecimal;
 @Data
 public class BidRequest {
     private String authtoken;
-    private Long item_id;
     private BigDecimal price;
 }

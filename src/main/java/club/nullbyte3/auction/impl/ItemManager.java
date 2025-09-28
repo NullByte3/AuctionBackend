@@ -85,7 +85,7 @@ public class ItemManager extends AuctionBase {
         }
     }
 
-    public void placeBid(User user, Item item, BigDecimal newPrice) {
+    public BigDecimal placeBid(User user, Item item) {
         try (Session session = sessionFactory.openSession()) {
             session.beginTransaction();
             // refresh item to get the latest from db.
@@ -97,6 +97,7 @@ public class ItemManager extends AuctionBase {
                     .orElse(item.getItemPrice());
 
             BigDecimal minimumBid = currentBid.add(item.getBidIncrement());
+            BigDecimal newPrice = minimumBid; // Currently we only accept bidding the next increment
             if (newPrice.compareTo(minimumBid) < 0) {
                 throw new IllegalArgumentException("Bid must be at least " + minimumBid);
             }
@@ -106,6 +107,7 @@ public class ItemManager extends AuctionBase {
             bid.setPrice(newPrice);
             session.save(bid);
             session.getTransaction().commit();
+            return newPrice;
         } catch (Exception e) {
             log.error("Failed to place bid", e);
             throw e;

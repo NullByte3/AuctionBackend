@@ -98,7 +98,7 @@ public class AuthManager extends AuctionBase {
                 ctx.status(401).result("Invalid token.");
                 return;
             }
-            ctx.json(user.getUsername());
+            ctx.json(user);
         }
     }
 }

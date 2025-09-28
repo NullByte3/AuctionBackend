@@ -18,11 +18,13 @@ import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 @Slf4j
@@ -43,7 +45,13 @@ public class BidManager extends AuctionBase implements Consumer<WsConfig> {
     @Override
     public void accept(WsConfig wsConfig) {
         wsConfig.onConnect(ctx -> {
+            ctx.enableAutomaticPings(3, TimeUnit.SECONDS);
             log.info("WS: {} connected!", ctx.sessionId());
+            Item item = AuctionManager.getCurrentItem();
+            if (item != null) {
+                WsMessage<Item> msg = new WsMessage<>("current_item", item);
+                ctx.send(objectMapper.writeValueAsString(msg));
+            }
             subscribers.add(ctx);
         });
         wsConfig.onClose(ctx -> {
@@ -59,8 +67,10 @@ public class BidManager extends AuctionBase implements Consumer<WsConfig> {
             switch (wsMessage.getSubject()) {
                 case "bid":
                     handleBidRequest(ctx, wsMessage);
+                    break;
                 case "current_item":
                     handleCurrentItemRequest(ctx);
+                    break;
                 default:
                     ctx.send("Unknown message type");
             }
@@ -71,12 +81,11 @@ public class BidManager extends AuctionBase implements Consumer<WsConfig> {
     }
 
     private void handleBidRequest(WsMessageContext ctx, WsMessage<BidRequest> wsMessage) {
-        BidRequest bidRequest = wsMessage.getPayload();
+        BidRequest bidRequest = objectMapper.convertValue(wsMessage.getPayload(), BidRequest.class);
         String authToken = bidRequest.getAuthtoken();
-        Long itemId = bidRequest.getItem_id();
 
-        if (authToken == null || itemId == null) {
-            ctx.send("Auth token and item ID are required.");
+        if (authToken == null) {
+            ctx.send("Auth token is  required.");
             return;
         }
 
@@ -90,15 +99,16 @@ public class BidManager extends AuctionBase implements Consumer<WsConfig> {
                 return;
             }
 
-            Item item = session.get(Item.class, itemId);
+            Item item = AuctionManager.getCurrentItem();
             if (item == null || !item.isActive()) {
                 ctx.send("Item not found or is not active.");
                 return;
             }
             if (bidRequest.getPrice() != null) { // bid-request.
-                BigDecimal newPrice = bidRequest.getPrice();
-                itemManager.placeBid(user, item, newPrice);
-                broadcastPriceUpdate(item.getId(), newPrice);
+                BigDecimal newPrice = itemManager.placeBid(user, item);
+                AuctionManager.resetTimer();
+                broadcastTimerReset();
+                broadcastPriceUpdate(item.getId(), newPrice, user);
             }
         }
     }
@@ -113,12 +123,13 @@ public class BidManager extends AuctionBase implements Consumer<WsConfig> {
         }
     }
 
-    public void broadcastPriceUpdate(Long itemId, BigDecimal newPrice) {
+    public void broadcastPriceUpdate(Long itemId, BigDecimal newPrice, User bidder) {
         log.info("Broadcasting price update for item {} to {} subscribers", itemId, subscribers.size());
-        BidResponse response = new BidResponse(newPrice);
+        BidResponse response = new BidResponse(newPrice, bidder.getUsername(), bidder.getId());
         subscribers.forEach(subscriber -> {
             try {
-                subscriber.send(objectMapper.writeValueAsString(response));
+                WsMessage<BidResponse> msg = new WsMessage<>("price_update", response);
+                subscriber.send(objectMapper.writeValueAsString(msg));
             } catch (Exception e) {
                 log.error("Failed to send price update to {}", subscriber.sessionId(), e);
             }
@@ -132,11 +143,57 @@ public class BidManager extends AuctionBase implements Consumer<WsConfig> {
             log.info("Broadcasting new auction for item {} to {} subscribers", item.getId(), subscribers.size());
             subscribers.forEach(subscriber -> {
                 try {
-                    subscriber.send(objectMapper.writeValueAsString(item));
+                    WsMessage<Item> msg = new WsMessage<>("new_auction", item);
+                    subscriber.send(objectMapper.writeValueAsString(msg));
                 } catch (Exception e) {
                     log.error("Failed to send new auction to {}", subscriber.sessionId(), e);
                 }
             });
+        }
+    }
+
+    public void broadcastAuctionEnd(Item item) {
+        if (item != null) {
+            subscribers.forEach(subscriber -> {
+                try {
+                    WsMessage<Item> msg = new WsMessage<>("auction_end", item);
+                    subscriber.send(objectMapper.writeValueAsString(msg));
+                } catch (Exception e) {
+                    log.error("Failed to send end auction to {}", subscriber.sessionId(), e);
+                }
+            });
+        }
+    }
+
+    public void broadcastTimerReset() {
+        Item item = AuctionManager.getCurrentItem();
+        if (item != null) {
+            subscribers.forEach(subscriber -> {
+                try {
+                    WsMessage<String> msg = new WsMessage<>("timer_update", item.getEndAt().toString());
+                    subscriber.send(objectMapper.writeValueAsString(msg));
+                } catch (Exception e) {
+                    log.error("Failed to send timer reset to {}", subscriber.sessionId(), e);
+                }
+            });
+        }
+    }
+
+    public User getHighestBidder(Item item) {
+        try {
+            Session session = sessionFactory.openSession();
+            session.beginTransaction();
+            // refresh item to get the latest from db.
+            session.refresh(item);
+            User topBidder = session.createQuery(
+                            "SELECT b.user FROM Bid b WHERE b.item = :item ORDER BY b.price DESC", User.class)
+                    .setParameter("item", item)
+                    .setMaxResults(1)
+                    .getSingleResult();
+            session.getTransaction().commit();
+            return topBidder;
+        } catch (Exception e) {
+            return null;
         }
     }
 }
