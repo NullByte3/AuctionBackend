@@ -8,7 +8,7 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                git 'https://github.com/NullByte3/AuctionBackend.git'
+                git url: 'https://github.com/NullByte3/AuctionBackend.git', branch: 'main'
             }
         }
         stage('Build') {
