@@ -4,9 +4,9 @@
 <hibernate-configuration>
     <session-factory>
         <property name="connection.driver_class">org.postgresql.Driver</property>
-        <property name="connection.url">jdbc:postgresql://172.17.0.1:5432/auction</property>
-        <property name="connection.username">b58249d8-712c-42d0-8b0d-796814bfc347</property>
-        <property name="connection.password">1fb3ed05-8485-4431-a1dd-3314cc978c76</property>
+        <property name="connection.url">${env.POSTGRES_URL}</property>
+        <property name="connection.username">${env.POSTGRES_USER}</property>
+        <property name="connection.password">${env.POSTGRES_PASSWORD}</property>
         <property name="connection.pool_size">32</property>
         <property name="dialect">org.hibernate.dialect.PostgreSQL95Dialect</property>
         <property name="show_sql">true</property>
