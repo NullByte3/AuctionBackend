@@ -4,9 +4,11 @@
 <hibernate-configuration>
     <session-factory>
         <property name="connection.driver_class">org.postgresql.Driver</property>
-        <property name="connection.url">${env.POSTGRES_URL}</property>
-        <property name="connection.username">${env.POSTGRES_USER}</property>
-        <property name="connection.password">${env.POSTGRES_PASSWORD}</property>
+
+        <property name="connection.url">${POSTGRES_URL}</property>
+        <property name="connection.username">${POSTGRES_USER}</property>
+        <property name="connection.password">${POSTGRES_PASSWORD}</property>
+
         <property name="connection.pool_size">32</property>
         <property name="dialect">org.hibernate.dialect.PostgreSQL95Dialect</property>
         <property name="show_sql">true</property>
