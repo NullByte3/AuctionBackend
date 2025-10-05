@@ -5,6 +5,7 @@ import club.nullbyte3.auction.db.Item;
 import club.nullbyte3.auction.db.User;
 import club.nullbyte3.auction.websocket.BidRequest;
 import club.nullbyte3.auction.websocket.BidResponse;
+import club.nullbyte3.auction.websocket.BidsResponse;
 import club.nullbyte3.auction.websocket.WsMessage;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -20,6 +21,7 @@ import org.hibernate.SessionFactory;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -51,6 +53,9 @@ public class BidManager extends AuctionBase implements Consumer<WsConfig> {
             if (item != null) {
                 WsMessage<Item> msg = new WsMessage<>("current_item", item);
                 ctx.send(objectMapper.writeValueAsString(msg));
+                WsMessage<BidsResponse> priceMsg = new WsMessage<>("current_bids",
+                        new BidsResponse(getTotalBids(item)));
+                ctx.send(objectMapper.writeValueAsString(priceMsg));
             }
             subscribers.add(ctx);
         });
@@ -180,8 +185,7 @@ public class BidManager extends AuctionBase implements Consumer<WsConfig> {
     }
 
     public User getHighestBidder(Item item) {
-        try {
-            Session session = sessionFactory.openSession();
+        try (Session session = sessionFactory.openSession()) {
             session.beginTransaction();
             // refresh item to get the latest from db.
             session.refresh(item);
@@ -194,6 +198,34 @@ public class BidManager extends AuctionBase implements Consumer<WsConfig> {
             return topBidder;
         } catch (Exception e) {
             return null;
+        }
+    }
+
+    public BidResponse[] getTotalBids(Item item) {
+        try (Session session = sessionFactory.openSession())  {
+            session.beginTransaction();
+            session.refresh(item);
+            List<Object[]> items = session.createQuery(
+                            "SELECT b.price, b.user FROM Bid b WHERE b.item = :item", Object[].class)
+                    .setParameter("item", item)
+                    .setMaxResults(20)
+                    .getResultList();
+            BidResponse[] bids = items.stream()
+                    .map(row -> new BidResponse((BigDecimal) row[0], ((User) row[1]).getUsername(), ((User) row[1]).getId()))
+                    .toArray(BidResponse[]::new);
+            return bids;
+        } catch (Exception e) {
+            return new BidResponse[0];
+        }
+    }
+
+    public void updateItem(Item item) {
+        try (Session session = sessionFactory.openSession()) {
+            session.beginTransaction();
+            session.update(item);
+            session.getTransaction().commit();
+        } catch (Exception e) {
+            log.error("Failed to update item {}", item.getId(), e);
         }
     }
 }

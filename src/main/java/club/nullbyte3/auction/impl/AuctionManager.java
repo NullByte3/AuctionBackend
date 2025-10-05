@@ -3,6 +3,7 @@ package club.nullbyte3.auction.impl;
 import club.nullbyte3.auction.db.Item;
 import lombok.Getter;
 import org.hibernate.SessionFactory;
+import org.hibernate.Transaction;
 
 import java.time.LocalDateTime;
 import java.util.ArrayDeque;
@@ -42,7 +43,10 @@ public class AuctionManager {
 
     public static void resetTimer() {
         if(endTask != null) endTask.cancel(false);
-        if(currentItem != null) currentItem.setEndAt(LocalDateTime.now().plusSeconds(AUCTION_DURATION));
+        if(currentItem != null) {
+            currentItem.setEndAt(LocalDateTime.now().plusSeconds(AUCTION_DURATION));
+            bidManager.updateItem(currentItem);
+        };
         endTask = scheduler.schedule(AuctionManager::auctionEnd, AUCTION_DURATION, TimeUnit.SECONDS);
     }
 
