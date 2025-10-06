@@ -20,7 +20,7 @@ public class AuctionManager {
     private static final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
 
     private static volatile ScheduledFuture<?> endTask;
-    private static final int AUCTION_DURATION = 15;
+    private static final int AUCTION_DURATION = 25;
     private static BidManager bidManager;
 
     public static void start(BidManager bidManager) {
@@ -30,6 +30,9 @@ public class AuctionManager {
 
     public static void addItem(Item item) {
         itemQueue.add(item);
+        if(currentItem == null) {
+            nextItem();
+        }
     }
 
     private static void nextItem() {
