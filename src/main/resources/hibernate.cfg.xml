@@ -1,0 +1,23 @@
+<!DOCTYPE hibernate-configuration PUBLIC
+        "-//Hibernate/Hibernate Configuration DTD 3.0//EN"
+        "http://www.hibernate.org/dtd/hibernate-configuration-3.0.dtd">
+<hibernate-configuration>
+    <session-factory>
+        <property name="connection.driver_class">org.postgresql.Driver</property>
+
+        <property name="connection.url">jdbc:postgresql://localhost:5432/auction</property>
+        <property name="connection.username">test</property>
+        <property name="connection.password">test</property>
+
+        <property name="connection.pool_size">32</property>
+        <property name="dialect">org.hibernate.dialect.PostgreSQL95Dialect</property>
+        <property name="show_sql">true</property>
+        <property name="hbm2ddl.auto">update</property>
+
+        <!-- Classes to be mapped -->
+        <mapping class="club.nullbyte3.auction.db.User"/>
+        <mapping class="club.nullbyte3.auction.db.Item"/>
+        <mapping class="club.nullbyte3.auction.db.Bid"/>
+
+    </session-factory>
+</hibernate-configuration>
