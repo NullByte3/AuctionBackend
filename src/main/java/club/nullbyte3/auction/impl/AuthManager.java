@@ -2,8 +2,6 @@ package club.nullbyte3.auction.impl;
 
 import club.nullbyte3.auction.AuctionBase;
 import club.nullbyte3.auction.db.User;
-import club.nullbyte3.auction.AuctionBase;
-import club.nullbyte3.auction.db.User;
 import io.javalin.http.Context;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.Session;

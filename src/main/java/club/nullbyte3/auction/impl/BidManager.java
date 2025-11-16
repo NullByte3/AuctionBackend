@@ -143,7 +143,7 @@ public class BidManager extends AuctionBase implements Consumer<WsConfig> {
 
     public void broadcastNewAuction() {
         Item item = AuctionManager.getCurrentItem();
-        System.out.println("Broadcasting new auction for item: " + item);
+        log.info("Broadcasting new auction for item: {}", item);
         if (item != null) {
             log.info("Broadcasting new auction for item {} to {} subscribers", item.getId(), subscribers.size());
             subscribers.forEach(subscriber -> {

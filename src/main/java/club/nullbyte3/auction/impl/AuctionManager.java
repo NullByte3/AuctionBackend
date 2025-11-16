@@ -14,6 +14,11 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 public class AuctionManager {
+
+    // A static class to manage lifecycle of items.
+    private AuctionManager() {
+    }
+
     @Getter
     private static Item currentItem;
     private static final Queue<Item> itemQueue = new ArrayDeque<>();
@@ -30,7 +35,7 @@ public class AuctionManager {
 
     public static void addItem(Item item) {
         itemQueue.add(item);
-        if(currentItem == null) {
+        if (currentItem == null) {
             nextItem();
         }
     }
@@ -45,11 +50,11 @@ public class AuctionManager {
     }
 
     public static void resetTimer() {
-        if(endTask != null) endTask.cancel(false);
-        if(currentItem != null) {
+        if (endTask != null) endTask.cancel(false);
+        if (currentItem != null) {
             currentItem.setEndAt(LocalDateTime.now().plusSeconds(AUCTION_DURATION));
             bidManager.updateItem(currentItem);
-        };
+        }
         endTask = scheduler.schedule(AuctionManager::auctionEnd, AUCTION_DURATION, TimeUnit.SECONDS);
     }
 
