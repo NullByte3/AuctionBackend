@@ -12,11 +12,13 @@ public class AuctionBase {
     private Application instance;
 
     public void enable() {
-
+        // This is intentionally left blank, to be overridden by subclasses.
+        // This is just an interface method.
     }
 
     public void disable() {
-
+        // This is intentionally left blank, to be overridden by subclasses.
+        // This is just an interface method.
     }
 
     public <T extends AuctionBase> T find(Class<T> clazz) {
