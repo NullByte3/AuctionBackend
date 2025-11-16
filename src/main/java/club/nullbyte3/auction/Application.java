@@ -27,6 +27,7 @@ public class Application {
         AuthManager authManager = getModule(AuthManager.class);
         ItemManager itemManager = getModule(ItemManager.class);
         BidManager bidManager = getModule(BidManager.class);
+        MessageManager messageManager = getModule(MessageManager.class);
         AuctionManager.start(bidManager);
 
         // Send a signal to all modules to start up.
@@ -50,6 +51,9 @@ public class Application {
         app.get("/item", itemManager::getAllItems);
         app.get("/item/{id}", itemManager::getItemById);
         app.post("/item", itemManager::createItem);
+        // Message endpoints
+        app.get("/messages/{lang}", messageManager::getMessagesByLanguage);
+        app.post("/message", messageManager::createMessage);
         // WebSocket endpoints
         app.ws("/ws/bid", bidManager);
         // Send a signal to all modules to shut down when we exit.
