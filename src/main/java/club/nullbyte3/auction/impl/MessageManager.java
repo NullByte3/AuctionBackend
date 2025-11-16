@@ -3,11 +3,15 @@ package club.nullbyte3.auction.impl;
 import club.nullbyte3.auction.AuctionBase;
 import club.nullbyte3.auction.db.Message;
 import club.nullbyte3.auction.db.User;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.javalin.http.Context;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
+import org.hibernate.Transaction;
 
+import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -19,6 +23,48 @@ public class MessageManager extends AuctionBase {
     @Override
     public void enable() {
         this.sessionFactory = find(DatabaseManager.class).getSessionFactory();
+        loadDefaultMessages(); // Loads up default messages from messages.json in the resources folder.
+    }
+
+    private void loadDefaultMessages() {
+        ObjectMapper objectMapper = new ObjectMapper();
+        TypeReference<Map<String, Map<String, String>>> typeRef = new TypeReference<>() {};
+        try (InputStream in = Thread.currentThread().getContextClassLoader().getResourceAsStream("messages.json")) {
+            if (in == null) {
+                log.warn("messages.json not found, skipping this task.");
+                return;
+            }
+
+            Map<String, Map<String, String>> languages = objectMapper.readValue(in, typeRef);
+            try (Session session = sessionFactory.openSession()) {
+                Transaction tx = session.beginTransaction();
+                for (Map.Entry<String, Map<String, String>> langEntry : languages.entrySet()) {
+                    String language = langEntry.getKey();
+                    for (Map.Entry<String, String> messageEntry : langEntry.getValue().entrySet()) {
+                        String key = messageEntry.getKey();
+                        String value = messageEntry.getValue();
+
+                        // if exists, skip.
+                        long count = session.createQuery("SELECT count(*) FROM Message WHERE language = :lang AND messageKey = :key", Long.class)
+                                .setParameter("lang", language)
+                                .setParameter("key", key)
+                                .getSingleResult();
+
+                        if (count == 0) {
+                            Message message = new Message();
+                            message.setLanguage(language);
+                            message.setMessageKey(key);
+                            message.setMessageValue(value);
+                            session.save(message);
+                            log.info("Loaded default message: lang={}, key={}", language, key);
+                        }
+                    }
+                }
+                tx.commit();
+            }
+        } catch (Exception e) {
+            log.error("Failed to load default messages from messages.json", e);
+        }
     }
 
     public void getMessagesByLanguage(Context ctx) {
