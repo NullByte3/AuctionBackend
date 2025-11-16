@@ -19,13 +19,9 @@ import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
@@ -202,7 +198,7 @@ public class BidManager extends AuctionBase implements Consumer<WsConfig> {
     }
 
     public BidResponse[] getTotalBids(Item item) {
-        try (Session session = sessionFactory.openSession())  {
+        try (Session session = sessionFactory.openSession()) {
             session.beginTransaction();
             session.refresh(item);
             List<Object[]> items = session.createQuery(
@@ -210,10 +206,9 @@ public class BidManager extends AuctionBase implements Consumer<WsConfig> {
                     .setParameter("item", item)
                     .setMaxResults(20)
                     .getResultList();
-            BidResponse[] bids = items.stream()
+            return items.stream()
                     .map(row -> new BidResponse((BigDecimal) row[0], ((User) row[1]).getUsername(), ((User) row[1]).getId()))
                     .toArray(BidResponse[]::new);
-            return bids;
         } catch (Exception e) {
             return new BidResponse[0];
         }

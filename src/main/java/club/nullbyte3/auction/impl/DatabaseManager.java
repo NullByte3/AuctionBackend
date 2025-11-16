@@ -25,7 +25,7 @@ public class DatabaseManager extends AuctionBase {
             Configuration configuration = new Configuration().configure();
             ensureDatabaseExists(configuration);
             sessionFactory = configuration.buildSessionFactory();
-        } catch (Throwable ex) {
+        } catch (Exception ex) {
             log.error("Failed to create sessionFactory object.", ex);
             throw new ExceptionInInitializerError(ex);
         }
