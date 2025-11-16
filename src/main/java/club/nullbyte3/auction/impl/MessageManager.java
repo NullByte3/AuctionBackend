@@ -28,7 +28,7 @@ public class MessageManager extends AuctionBase {
                     .setParameter("lang", lang)
                     .list();
             Map<String, String> messageMap = messages.stream()
-                    .collect(Collectors.toMap(Message::getMessageKey, Message::getMessageValue));
+                    .collect(Collectors.toMap(Message::getMessageKey, Message::getMessageValue, (existing, replacement) -> replacement));
             ctx.json(messageMap);
         } catch (Exception e) {
             log.error("Error getting messages for language {}", lang, e);
