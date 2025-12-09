@@ -18,6 +18,7 @@
         <mapping class="club.nullbyte3.auction.db.User"/>
         <mapping class="club.nullbyte3.auction.db.Item"/>
         <mapping class="club.nullbyte3.auction.db.Bid"/>
+        <mapping class="club.nullbyte3.auction.db.Message"/>
 
     </session-factory>
 </hibernate-configuration>
