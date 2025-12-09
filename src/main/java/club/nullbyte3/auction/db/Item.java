@@ -25,7 +25,7 @@ public class Item {
     @Column(name = "item_name", nullable = false)
     private String itemName;
 
-    @Column(name = "item_image")
+    @Column(name = "item_image", columnDefinition = "TEXT")
     private String itemImage;
 
     @Column(name = "item_price", nullable = false)
